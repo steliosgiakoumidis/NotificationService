@@ -22,20 +22,20 @@ namespace NotificationService.Processing
                 {
                     var userList = new List<User>();
                     var template = templates.FirstOrDefault(x => x.NotificationName == sendout.ReminderName);
-                    var user = users.FirstOrDefault(x => sendout.Username == sendout.Username);
-                    var userGroup = userGroups
+                    var user = users.FirstOrDefault(x => x.Username == sendout.Username);
+                    var temp = userGroups
                         .FirstOrDefault(x => x.GroupName == sendout.UserGroup)
-                        .UserIds
-                        .Split(",")
-                        .Select(x => Convert.ToInt32(x.Trim())).ToList()
+                        ?.UserIds;
+                    var userGroup = temp?.Split(",")
+                        .Select(x => Convert.ToInt32(x.Trim()))
                         .Select(x => users.FirstOrDefault(y => y.Id == x));
                     if (user != null) userList.Add(user);
                     if (userGroup != null) userList.AddRange(userGroup);
-                    var meanOfCommunication = ExtractPriority(sendout, template, userList);
-                    var listOfContatDetails = meanOfCommunication == MeansOfCommunication.Email ?
-                        userList.Select(x => x.Email) : userList.Select(x => x.Facebook);
+                    var meanOfCommunication = ExtractPriority(template, userList);
+                    var listOfContactDetails = meanOfCommunication == MeansOfCommunication.Email ?
+                        userList.Select(x => x.Email) : userList.Select(x => x.SMS);
 
-                    sendoutReadyList.AddRange(listOfContatDetails.Select(x => new GatewaySendout()
+                    sendoutReadyList.AddRange(listOfContactDetails.Select(x => new GatewaySendout()
                     {
                         Text = GetParsedNotificationText(sendout, template),
                         ContactDetails = x,
@@ -44,29 +44,27 @@ namespace NotificationService.Processing
                 }
                 catch (Exception ex)
                 {
-                    Log.Error($"Sendout list can not be analyzed, please check checkout records. Error thrown: {ex}");
+                    Log.Error($"Sendout list can not be processed, please check checkout records. Error thrown: {ex}");
                 }
             }
             return sendoutReadyList;
         }
 
-        private MeansOfCommunication ExtractPriority(Sendout sendout, Template template, IEnumerable<User> user)
+        private MeansOfCommunication ExtractPriority(Template template, IEnumerable<User> user)
         {
-            var parameterSets = sendout.Parameters.Split(",").Select(x => x.Trim()).ToList();
-            if (parameterSets[0] == MeansOfCommunication.Email.ToString() &&
+            if (Convert.ToInt16(template.NotificationPriority) == (int) MeansOfCommunication.Email &&
                user.All(x => !String.IsNullOrEmpty(x.Email))) return MeansOfCommunication.Email;
-
-            if (parameterSets[0] == MeansOfCommunication.Facebook.ToString() &&
-                user.All(x => !String.IsNullOrEmpty(x.Email))) return MeansOfCommunication.Facebook;
+            if (Convert.ToInt16(template.NotificationPriority) == (int) MeansOfCommunication.SMS &&
+                user.All(x => !String.IsNullOrEmpty(x.SMS))) return MeansOfCommunication.SMS;
 
             throw new ArgumentException("Not specific priority is set for this notification");
         }
 
         private string GetParsedNotificationText(Sendout sendout, Template template)
         {
-            var parameterSets = sendout.Parameters.Split(",").Select(x => x.Trim()).ToList();
+            var parameterSet = sendout.Parameters.Split(",").Select(x => x.Trim()).ToList();
             var dictionaryParam = new Dictionary<string, string>();
-            foreach (var line in parameterSets)
+            foreach (var line in parameterSet)
             {
                 dictionaryParam.Add(line.Split("=")[0], line.Split("=")[1]);
             }
@@ -81,10 +79,13 @@ namespace NotificationService.Processing
                     continue;
                 }
                 var wordWithBrackets = template.NotificationText.Substring(openBracketIndex, closeBracketIndex - openBracketIndex + 1);
-                if (dictionaryParam.ContainsKey(wordWithBrackets.Substring(1, wordWithBrackets.Length - 1)))
-                    template.NotificationText = template.NotificationText.
+                template.NotificationText = dictionaryParam.ContainsKey(wordWithBrackets.Substring(1, wordWithBrackets.Length - 1)) ?
+                     template.NotificationText.
                             Replace(wordWithBrackets,
-                            dictionaryParam[wordWithBrackets.Substring(1, wordWithBrackets.Length - 1)]);
+                            dictionaryParam[wordWithBrackets.Substring(1, wordWithBrackets.Length - 1)]) :
+                     template.NotificationText.
+                            Replace(wordWithBrackets, $"{wordWithBrackets.Substring(1, wordWithBrackets.Length - 2)}");
+
             }
             return template.NotificationText;
         }       

@@ -21,7 +21,6 @@ namespace NotificationService
             WebHost.CreateDefaultBuilder(args)
                 .UseUrls("http://localhost:5003")
                 .UseContentRoot(Directory.GetCurrentDirectory())
-                .UseStartup<Startup>()
                 .UseStartup<Startup>();
     }
 }

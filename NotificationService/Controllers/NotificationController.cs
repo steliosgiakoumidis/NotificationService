@@ -22,7 +22,7 @@ namespace NotificationService.Controllers
         public async Task SendNotification([FromBody] Sendout sendout)
         {
             var notificationToSend = await SendoutExtractAndProcessPipeline.
-                    GetNotificationsAsync(_clientFactory, _config);
+                    GetNotificationsAsync(_clientFactory, _config, sendout);
             await GatewayClient.GatewayClient.SendToExternalService(notificationToSend,
                 _clientFactory, _config, Enums.ExternalServices.PostToNotificationGateway);
         }

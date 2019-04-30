@@ -32,7 +32,7 @@ namespace NotificationService.GatewayClient
                     new System.Net.Http.Headers.MediaTypeHeaderValue("application/json");
                 var client = clientFactory.CreateClient();
                 var response = externalService == ExternalServices.PutToNotificationApi ?
-                    await client.PutAsync(config.NotificationApiUrl, httpContent) : 
+                    await client.PutAsync(config.NotificationApiUrl + "RegularSendOut", httpContent) : 
                     await client.PostAsync(config.NotificationGatewayUrl, httpContent);
                 return response.IsSuccessStatusCode;
             }

@@ -12,14 +12,22 @@ namespace NotificationService.Processing
 {
     public class SendoutExtractAndProcessPipeline
     {
-        public async static Task<IEnumerable<GatewaySendout>> GetNotificationsAsync(IHttpClientFactory clientFactory, Config config)
+        public async static Task<IEnumerable<GatewaySendout>> GetNotificationsAsync(
+            IHttpClientFactory clientFactory, Config config, Sendout sendoutFromController = null)
         {
             var sendouts = await GetSendoutList(clientFactory, config);
+            if (sendoutFromController != null)
+            {
+                sendoutFromController.Id = sendouts.FirstOrDefault(x => x.ReminderName == sendoutFromController.ReminderName).Id;
+                sendouts = new List<Sendout>() { sendoutFromController };
+            }
             var templates = await GetTemplates(clientFactory, config);
             var users = await GetUsers(clientFactory, config);
             var usergroups = await GetUserGroups(clientFactory, config);
-            var timeFilteredSendouts = FilterSendouts(sendouts);
-            MarkAsSent(sendouts, clientFactory, config);
+            var timeFilteredSendouts = sendoutFromController == null ? 
+                FilterSendouts(sendouts) :
+                sendouts;
+            MarkAsSent(timeFilteredSendouts, clientFactory, config);
             return new SendoutProcessing().ParseTextAndSetUserPreferences(usergroups, users, templates,
                     timeFilteredSendouts);
         }
@@ -27,42 +35,42 @@ namespace NotificationService.Processing
         private async static void MarkAsSent(IEnumerable<Sendout> sendouts, 
             IHttpClientFactory clientFactory, Config config)
         {
+            sendouts.ToList().ForEach(s => s.LastRunAt = DateTime.Now);
             await GatewayClient.GatewayClient.SendToExternalService(sendouts,
                 clientFactory, config, ExternalServices.PutToNotificationApi);
         }
 
         private async static Task<IEnumerable<Sendout>> GetSendoutList(IHttpClientFactory clientFactory, Config config)
         {
-            var uri = $"{config.NotificationApiUrl}/regularsendout";
+            var uri = $"{config.NotificationApiUrl}regularsendout";
             return await Utilities.ExternalServiceCalls.
                 GetAllItems<Sendout>(clientFactory, uri);
         }
 
         private async static Task<IEnumerable<Template>> GetTemplates(IHttpClientFactory clientFactory, Config config)
         {
-            var uri = $"{config.NotificationApiUrl}/template";
+            var uri = $"{config.NotificationApiUrl}template";
             return await Utilities.ExternalServiceCalls.
                 GetAllItems<Template>(clientFactory, uri);
         }
 
         private async static Task<IEnumerable<User>> GetUsers(IHttpClientFactory clientFactory, Config config)
         {
-            var uri = $"{config.NotificationApiUrl}/users";
+            var uri = $"{config.NotificationApiUrl}users";
             return await Utilities.ExternalServiceCalls.
                 GetAllItems<User>(clientFactory, uri);
         }
 
         private async static Task<IEnumerable<UserGroup>> GetUserGroups(IHttpClientFactory clientFactory, Config config)
         {
-            var uri = $"{config.NotificationApiUrl}/usergroups";
+            var uri = $"{config.NotificationApiUrl}usergroups";
             return await Utilities.ExternalServiceCalls.
                 GetAllItems<UserGroup>(clientFactory, uri);
         }
 
         private static IEnumerable<Sendout> FilterSendouts(IEnumerable<Sendout> sendouts)
         {
-            return sendouts.AsParallel().Where(x => FilterSendout(x) == true);
-
+            return sendouts.AsParallel().Where(x => FilterSendout(x) == true).ToList();
         }
 
         private static bool FilterSendout(Sendout sendout)
@@ -95,7 +103,7 @@ namespace NotificationService.Processing
 
             //Notification will arrive at the controller and not through the scheduoed task
             if (sendout.RepetitionFrequency == RepetitionFrequency.Now &&
-                RepetitionFrequencyRequirements.RepetitionFrequencySecondMonthRequirements(sendout)) return false;
+                RepetitionFrequencyRequirements.RepetitionFrequencyOnceRequirements(sendout)) return false;
 
             return false;
         }
