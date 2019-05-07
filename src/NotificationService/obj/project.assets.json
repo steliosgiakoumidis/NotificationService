@@ -13293,11 +13293,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Repositories\\NotificationService\\NotificationService\\NotificationService\\NotificationService.csproj",
+      "projectUniqueName": "C:\\Repositories\\NotificationService\\NotificationService\\src\\NotificationService\\NotificationService.csproj",
       "projectName": "NotificationService",
-      "projectPath": "C:\\Repositories\\NotificationService\\NotificationService\\NotificationService\\NotificationService.csproj",
+      "projectPath": "C:\\Repositories\\NotificationService\\NotificationService\\src\\NotificationService\\NotificationService.csproj",
       "packagesPath": "C:\\Users\\Stylianos\\.nuget\\packages\\",
-      "outputPath": "C:\\Repositories\\NotificationService\\NotificationService\\NotificationService\\obj\\",
+      "outputPath": "C:\\Repositories\\NotificationService\\NotificationService\\src\\NotificationService\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder"

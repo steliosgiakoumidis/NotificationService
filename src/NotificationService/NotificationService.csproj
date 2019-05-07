@@ -20,7 +20,7 @@
 
   <ItemGroup>
     <Reference Include="NotificationCommon">
-      <HintPath>..\..\..\NotificationCommon\NotificationCommon\bin\Debug\netstandard2.0\NotificationCommon.dll</HintPath>
+      <HintPath>..\..\..\..\NotificationCommon\NotificationCommon\bin\Debug\netstandard2.0\NotificationCommon.dll</HintPath>
     </Reference>
   </ItemGroup>
 
