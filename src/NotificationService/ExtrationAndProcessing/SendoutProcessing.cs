@@ -22,7 +22,7 @@ namespace NotificationService.Processing
                 {
                     var userList = new List<User>();
                     var template = templates
-                                    .FirstOrDefault(x => x.NotificationName == sendout.ReminderName);
+                                    .FirstOrDefault(x => x.NotificationName == sendout.TemplateName);
                     var user = users.FirstOrDefault(x => x.Username == sendout.Username);
                     var temp = userGroups
                         .FirstOrDefault(x => x.GroupName == sendout.UserGroup)

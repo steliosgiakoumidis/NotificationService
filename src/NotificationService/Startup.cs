@@ -6,16 +6,21 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using NotificationService.Scheduler;
 using Serilog;
+using System.IO;
+using System.Runtime.InteropServices;
 
 namespace NotificationService
 {
     public class Startup
     {
-        public Startup(IConfiguration configuration, Microsoft.AspNetCore.Hosting.IHostingEnvironment env)
+        public Startup(IConfiguration configuration)
         {
+            var env = RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ?
+            "Linux" : "Windows";
             Configuration = new ConfigurationBuilder()
-                    .SetBasePath(env.ContentRootPath)
+                    .SetBasePath(Directory.GetCurrentDirectory())
                     .AddJsonFile("appsettings.json")
+                    .AddJsonFile($"appsettings.{env}.json", true)
                     .AddEnvironmentVariables()
                     .Build();
 
